@@ -1,96 +1,111 @@
-//aqui recupero una lista de botonoes
-var botones = document.getElementsByClassName("btn-reproducir");
+const reproductor = new Audio(); /* we ned a player */
+const songsLists = document.querySelector(".songs-list"); /* might as well grab the empty  <ul> right now */
+let songs = []; /* this is a let variable because I will fill it with data later */
 
-//aqui recorri cada elemento de la lista de botones
-for (var i = 0; i < botones.length; i++) {
-  botones[i].addEventListener("click", function(e) {
-    play(e);
-  });
-  //botones[i].onclick=function (){alert("cosa")}
-}
+/**
+ * populateCards : Makes asynchronous ajax call to get data
+ * pause : Stops playing if the button click is enabled
+ * play : stops player and changes track then restarts
+ * CreateCard :  builds the htmlfor the song cards
+ * attachToDOM : appends the html to the DOM
+ * actualizarBarra : updates the progress bar every 500 mils
+ * cambiarInfo : updates the data in the center player ui
+ * HighlightSelectedCard : Highlights the song that is playing with a green halo
+ * disablePauseButtons : Disable all pause buttons except the one needed
+ *
+ *
+ *
+ *
+ */
 
-//defino la funcion para disparar la accion cuando un click
-function play(e) {
-  var cards = document.getElementsByClassName("card-body");
+//this is for netlify
+/* const populateCards = () => {
+  return fetch("db.json")
+    .then(response => response.json())
+    .then(data => {
+      songs = data.songs;
+      songs.map((song, index) => CreateCard(song, index));
+    });
+}; */
 
+const populateCards = () => {
+  return fetch("http://localhost:3000/songs")
+    .then(response => response.json())
+    .then(songsData => {
+      songs = songsData;
+      songs.map((song, index) => CreateCard(song, index));
+    });
+};
 
-  //quito el color a todas las tarjetas
-  for (var iterador = 0; iterador < cards.length; iterador++) {
-    cards[iterador].classList.remove("seleccionada");
-  } // hago trampa  , se le quito la clase sele a todas
-
-  e.target.parentElement.classList.add("seleccionada") // pinto la tarjeta que acabo de tocar
-
-  var cancion = e.target.parentElement.parentElement.dataset.cancion; // extraigo nombre cancion
-  var reproductor = new Audio("music/" + cancion + ".mp3");
-  reproductor.play();
-  //reproductor.volume = 0.08;  // activa estas dos lineas para probar
-  //reproductor.playbackRate = 5;
-
-  setInterval(function() {
-    //cada 500 milisegundos actualizamos la barra de progresso
-    actualizarBarra(reproductor);
-  }, 500);
-
-  //aqui cambiamos el texto , pasamos el evento (con el boton para acutalizar los campos)
-  cambiarInfo(e.target.parentElement);
-}
-
-function actualizarBarra(reproductor) {
-  var progresoNumero =
-    Math.round((reproductor.currentTime / reproductor.duration) * 100) + "%"; // guardo porcentaje para gutura referencia
-  var progressBar = document.getElementsByClassName("progress-bar")[0]; 
-  progressBar.style.width = progresoNumero; // Aqui actualizamos el css para bootstrap
-  progressBar.innerHTML = progresoNumero; // aqui actualizamos El texto interior que muestra el porcentaje
-}
-
-/*
-var titulo = e.target.hermano[0].children[0].children[0].innerText => "Blacnk in back"
-				//	var titulo = e.target.(papa.hijos[0]).getelementbyClassName(titulo)[0].innerText 
-					var autor =e.target.hermano[0].children[0].chyildren[1].innerText= > ACDC   
-					var imagen = e.target.hermano[0].children[1].children[0].src;  =>>> la foto   
-
-  
-					//var contender  =  getEmeltltbnyID(cosa-ecushandkoakdfhdkisd)
-					var titulo= document.getElementById("tituloCancion");
-					titulo.innerText= titulo ;
-
-					document.getElementById("tituloArtista").innerText=autor; 
-					document.getelemevebhibyId    ("contenedorImagen").children[0].src=imagen
-
-
-
-
-*/
-
-function cancionseleccionada(cancion, elementoCancion) {
-  if (ultimaCancion != "") {
-    var selector = 'li [data-cancion="' + ultimaCancion + '"]';
-    var elementoAnterior = contenedorPlaylist.querySelector(selector);
-    elementoAnterior.classList.remove("selecionada");
+const pause = () => {
+  if (event.target.classList.contains("disabled")) return; //** if clicked button contains 'disabled', don't do anything */
+  reproductor.pause();
+};
+const play = (audio, index) => {
+  HighlightSelectedCard(document.getElementsByClassName("card"), index); /* first we highlight the card */
+  reproductor.src = `music/${audio}`; /* change tracks with a template string */
+  reproductor.play(); /*start reproduction */
+  cambiarInfo(index); /* we update the central ui with the artist's information and picture */
+  disablePauseButtons(document.getElementsByClassName("btn-detener"), index); /* might as well turn off all pause buttuns but this one */
+};
+const CreateCard = ({ title, artist, image, audio }, index) => {
+  /* destructuring */
+  /*this entire template string in the argument for the attachtoDOM function */
+  attachToDOM(` 
+  <div class="card-body">
+    <div class="d-flex justify-content-between contenedor-informacion">
+      <div>
+        <h4>${title}</h4>
+        <h5>${artist}</h5>
+      </div>
+      <div>
+        <img src="img/${image}" class="img-album" />
+      </div>
+    </div>
+    <button class="btn-reproducir" onclick="
+      play('${audio}',${index})  
+    "><i class="fas fa-play"></i></button>
+    <button class=" btn-detener disabled" onclick="
+    pause()"><i class="fas fa-pause"></i></button>
+  </div>
+`);
+};
+//actualizar barra de progreso
+const actualizarBarra = () => {
+  const progresoNumero = Math.round((reproductor.currentTime / reproductor.duration) * 100) + "%"; // guardo porcentaje para futura referencia
+  const progressBar = document.querySelector("#myBar");
+  progressBar.style.width = `${progresoNumero}`; // Aqui actualizamos el css para bootstrap
+};
+const cambiarInfo = index => {
+  document.querySelector("#tituloCancion").innerHTML = songs[index].title;
+  document.querySelector("#tituloArtista").innerHTML = songs[index].artist;
+  document.querySelector(".player-cover-image").src = `img/${songs[index].largeImage}`; /*template strings*/
+};
+const HighlightSelectedCard = (nodeCollection, index) => {
+  for (let i = 0; i < nodeCollection.length; i++) {
+    /*manually looping because the node collection is not an array */
+    index === i ? nodeCollection[i].classList.add("playing") : nodeCollection[i].classList.remove("playing"); /* adding a class to the card I just clicked on */
   }
-}
-function cambiarInfo(elemento) {
-  var contenedor = elemento.getElementsByClassName("contenedor-informacion")[0];
-  var elementoCancion = contenedor.children[0].children[0];
-  var elementoNArtista = contenedor.children[0].children[1];
-  var nombreCancion = elementoCancion.innerHTML;
-  var nombreArtista = elementoNArtista.innerHTML;
-  var rutaImagen = elementoImagen.src;
+};
 
-  document.getElementsById("tituloCancion").innerHTML = nombreCancion;
-  document.getElementsById("tituloartista").innerHTML = nombreArtista;
-
-  elementoImagen = document.createElement("img");
-  elementoImagen.classList.add("imagen-actual");
-  elementoImagen.src = rutaImagen;
-
-  var contenedorImagen = document.getElementsById("contenedorImagen");
-  if (contenedorImagen.children.length > 0) {
-    contenedorImagen.children[0].remove();
+const disablePauseButtons = (nodeCollection, index) => {
+  for (let i = 0; i < nodeCollection.length; i++) {
+    /*manually looping because the node collection is not an array */
+    index === i ? nodeCollection[i].classList.remove("disabled") : nodeCollection[i].classList.add("disabled");
   }
-  contenedorImagen.appchild(elementoImagen);
-
-  console.log(nombreCancion);
-  console.log(nombreArtista);
-}
+};
+const attachToDOM = html => {
+  /* since the function takes only one parameter we don't need parenthesis */
+  const card = document.createElement("li"); /*create new element  with the card class*/
+  card.classList.add("card");
+  card.innerHTML = html; /*fill content of card with the template string above*/
+  songsLists.appendChild(card); /*bind the newly created node to the dom*/
+};
+populateCards(); /*invoke the fetch call after all the other code has finished loading */
+setInterval(() => {
+  actualizarBarra();
+}, 500); /*we update the progress bar every 500 milliseconds*/
+reproductor.onended = () => {
+  HighlightSelectedCard(document.getElementsByClassName("card"), 900);
+  reproductor.currentTime = 0;
+};

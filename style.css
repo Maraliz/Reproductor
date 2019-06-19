@@ -1,11 +1,39 @@
-.img-album{
-	width: 150px;
-	height: 150px;
-}
-.card{
-	margin-bottom: 10px;
-	
+@import "layout.css";
+@import "theme.css";
+@import "progress.css";
+
+.img-album {
+  width: 150px;
+  height: 150px;
 }
 
+@media (min-width: 840px) {
+  .img-album {
+    box-shadow: 0 10px 20px rgba(47, 59, 66, 0.19),
+      0 6px 6px rgba(47, 59, 66, 0.23);
+    margin-right: -80px;
+    width: 200px;
+    height: 200px;
+  }
+}
 
-.seleccionada{background-color: aqua;}
+.player-cover-image {
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.card {
+  background-color: #1a222c;
+  color: white;
+  border-radius: 15px;
+  text-transform: capitalize;
+}
+
+footer {
+  height: 57px;
+  color: white;
+  text-align: center;
+  padding: 0.3125rem 0;
+  font-size: 1.5rem;
+  border-top: 1px solid #2f3b42;
+}
